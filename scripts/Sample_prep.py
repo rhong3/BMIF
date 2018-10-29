@@ -7,12 +7,13 @@ import os
 import pandas as pd
 import sklearn.utils as sku
 import numpy as np
+import cv2
 
 
-pos_path = '../Neutrophil/All_Tiles_final/pos'
-neg_path = '../Neutrophil/All_Tiles_final/neg'
-pos_pattern = '../Neutrophil/All_Tiles_final/pos/{}'
-neg_pattern = '../Neutrophil/All_Tiles_final/neg/{}'
+pos_path = '../img/pos'
+neg_path = '../img/neg'
+pos_pattern = '../img/pos/{}'
+neg_pattern = '../img/neg/{}'
 
 
 def image_ids_in(root_dir, ignore=['.DS_Store']):
@@ -23,6 +24,34 @@ def image_ids_in(root_dir, ignore=['.DS_Store']):
         else:
             ids.append(id)
     return ids
+
+
+def augmentation():
+    poslist = image_ids_in(pos_path)
+    neglist = image_ids_in(neg_path)
+    for i in poslist:
+        posdir = pos_pattern.format(i)
+        im = cv2.imread(posdir)
+        im90 = np.rot90(im)
+        cv2.imwrite(pos_pattern.format(i+'90.png'), im90)
+        im180 = np.rot90(im,2)
+        cv2.imwrite(pos_pattern.format(i+'180.png'), im180)
+        im270 = np.rot90(im,3)
+        cv2.imwrite(pos_pattern.format(i+'270.png'), im270)
+        imflp = np.flip(im, 1)
+        cv2.imwrite(pos_pattern.format(i+'f.png'), imflp)
+
+    for j in neglist:
+        negdir = neg_pattern.format(j)
+        im = cv2.imread(negdir)
+        im90 = np.rot90(im)
+        cv2.imwrite(neg_pattern.format(j + '90.png'), im90)
+        im180 = np.rot90(im, 2)
+        cv2.imwrite(neg_pattern.format(j + '180.png'), im180)
+        im270 = np.rot90(im, 3)
+        cv2.imwrite(neg_pattern.format(j + '270.png'), im270)
+        imflp = np.flip(im, 1)
+        cv2.imwrite(neg_pattern.format(i + 'f.png'), imflp)
 
 
 def samplesum():
@@ -46,10 +75,10 @@ def samplesum():
         pospd.append(pdp)
         totpd.append(pdp)
         postemplist.append(pdp)
-        if len(postemplist) == 17:
+        if len(postemplist) == 5:
             if len(telist) < postenum:
                 s = np.random.random_sample()
-                if s > 0.85:
+                if s > 0.75:
                     telist.extend(postemplist)
                 else:
                     trlist.extend(postemplist)
@@ -63,10 +92,10 @@ def samplesum():
         negpd.append(pdn)
         totpd.append(pdn)
         negtemplist.append(pdn)
-        if len(negtemplist) == 4:
+        if len(negtemplist) == 5:
             if len(telist) < negtenum+postenum:
                 s = np.random.random_sample()
-                if s > 0.85:
+                if s > 0.75:
                     telist.extend(negtemplist)
                 else:
                     trlist.extend(negtemplist)
@@ -87,11 +116,11 @@ def samplesum():
 
     return totpd, pospd, negpd, tepd, trpd
 
-
+augmentation()
 tot, pos, neg, te, tr = samplesum()
 
-tot.to_csv('../Neutrophil/All_Tiles_final/tot_sample.csv', index = False)
-pos.to_csv('../Neutrophil/All_Tiles_final/pos_sample.csv', index = False)
-neg.to_csv('../Neutrophil/All_Tiles_final/neg_sample.csv', index = False)
-tr.to_csv('../Neutrophil/All_Tiles_final/tr_sample.csv', index = False)
-te.to_csv('../Neutrophil/All_Tiles_final/te_sample.csv', index = False)
+tot.to_csv('../img/tot_sample.csv', index = False)
+pos.to_csv('../img/pos_sample.csv', index = False)
+neg.to_csv('../img/neg_sample.csv', index = False)
+tr.to_csv('../img/tr_sample.csv', index = False)
+te.to_csv('../img/te_sample.csv', index = False)
