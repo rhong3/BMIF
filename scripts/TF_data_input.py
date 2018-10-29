@@ -48,10 +48,10 @@ class DataSet(object):
 
                 if self._mode == 'train':
                     # Creates batches by randomly shuffling tensors
-                    self.imgs, self.lbs = tf.train.shuffle_batch([image, label], batch_size=batch_size, capacity=5000, num_threads=4,
-                                                       min_after_dequeue=1000, allow_smaller_final_batch=True)
+                    self.imgs, self.lbs = tf.train.shuffle_batch([image, label], batch_size=batch_size, capacity=100, num_threads=2,
+                                                       min_after_dequeue=2, allow_smaller_final_batch=True)
                 else:
-                    self.imgs, self.lbs = tf.train.batch([image, label], batch_size=batch_size, capacity=5000, num_threads=4,
+                    self.imgs, self.lbs = tf.train.batch([image, label], batch_size=batch_size, capacity=100, num_threads=2,
                                                          allow_smaller_final_batch=True)
 
                 self._images = image
@@ -60,7 +60,7 @@ class DataSet(object):
                 return self.imgs, self.lbs, self._num_examples
 
             else:
-                self.imgs = tf.train.batch([image], batch_size=batch_size, capacity=5000,
+                self.imgs = tf.train.batch([image], batch_size=batch_size, capacity=100,
                                                      num_threads=4,
                                                      allow_smaller_final_batch=True)
 

@@ -102,8 +102,8 @@ def py_map2jpg(imgmap, rang, colorMap):
 
 
 def CAM(net, w, pred, x, y, path, name, rd=0):
-    DIR = "../Neutrophil/{}/out/{}_posimg".format(path, name)
-    DIRR = "../Neutrophil/{}/out/{}_negimg".format(path, name)
+    DIR = "../{}/out/{}_posimg".format(path, name)
+    DIRR = "../{}/out/{}_negimg".format(path, name)
     rd = rd*1000
 
     try:
