@@ -43,11 +43,11 @@ HYPERPARAMS = {
 MAX_ITER = np.inf
 MAX_EPOCHS = ep
 
-img_dir = '../Neutrophil/All_Tiles_final'
-LOG_DIR = "../Neutrophil/{}".format(dirr)
-METAGRAPH_DIR = "../Neutrophil/{}".format(dirr)
-data_dir = "../Neutrophil/{}/data".format(dirr)
-out_dir = "../Neutrophil/{}/out".format(dirr)
+img_dir = '../img'
+LOG_DIR = "../{}".format(dirr)
+METAGRAPH_DIR = "../{}".format(dirr)
+data_dir = "../{}/data".format(dirr)
+out_dir = "../{}/out".format(dirr)
 
 
 def counters(totlist_dir):
