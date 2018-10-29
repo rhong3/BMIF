@@ -128,7 +128,7 @@ def samplesum():
 
     return totpd, pospd, negpd, tepd, trpd
 
-augmentation()
+# augmentation()
 tot, pos, neg, te, tr = samplesum()
 
 tot.to_csv('../img/tot_sample.csv', index = False)
