@@ -51,7 +51,7 @@ def augmentation():
         negdir = neg_pattern.format(j)
         im = cv2.imread(negdir)
         im = cv2.resize(im, (299, 299))
-        cv2.imwrite(pos_pattern.format(i), im)
+        cv2.imwrite(neg_pattern.format(j), im)
         im90 = np.rot90(im)
         im90 = cv2.resize(im90, (299, 299))
         cv2.imwrite(neg_pattern.format(j + '90.png'), im90)
@@ -63,7 +63,7 @@ def augmentation():
         cv2.imwrite(neg_pattern.format(j + '270.png'), im270)
         imflp = np.flip(im, 1)
         imflp = cv2.resize(imflp, (299, 299))
-        cv2.imwrite(neg_pattern.format(i + 'f.png'), imflp)
+        cv2.imwrite(neg_pattern.format(j + 'f.png'), imflp)
 
 
 def samplesum():
