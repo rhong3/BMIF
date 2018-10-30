@@ -15,7 +15,7 @@ def realout(pdx, path, name):
     out = pd.DataFrame(pdx, columns=['neg_score', 'pos_score'])
     out = pd.concat([out, prl], axis=1)
     out.insert(loc=0, column='Num', value=out.index)
-    out.to_csv("../Neutrophil/{}/out/{}.csv".format(path, name), index=False)
+    out.to_csv("../{}/out/{}.csv".format(path, name), index=False)
 
 
 def metrics(pdx, tl, path, name):
@@ -25,7 +25,7 @@ def metrics(pdx, tl, path, name):
     out = pd.DataFrame(pdx, columns = ['neg_score', 'pos_score'])
     outtl = pd.DataFrame(tl, columns = ['True_label'])
     out = pd.concat([out,prl,outtl], axis=1)
-    out.to_csv("../Neutrophil/{}/out/{}.csv".format(path, name), index=False)
+    out.to_csv("../{}/out/{}.csv".format(path, name), index=False)
     accu = 0
     tott = out.shape[0]
     for idx, row in out.iterrows():
@@ -53,7 +53,7 @@ def metrics(pdx, tl, path, name):
         plt.ylabel('True Positive Rate')
         plt.title('ROC of {}'.format(name))
         plt.legend(loc="lower right")
-        plt.savefig("../Neutrophil/{}/out/{}_ROC.png".format(path, name))
+        plt.savefig("../{}/out/{}_ROC.png".format(path, name))
 
         average_precision = skl.metrics.average_precision_score(tl, y_score)
         print('Average precision-recall score: {0:0.2f}'.format(average_precision))
@@ -68,7 +68,7 @@ def metrics(pdx, tl, path, name):
         plt.ylim([0.0, 1.05])
         plt.xlim([0.0, 1.0])
         plt.title('{} Precision-Recall curve: AP={:0.2f}; Accu={}'.format(name, average_precision, accur))
-        plt.savefig("../Neutrophil/{}/out/{}_PRC.png".format(path, name))
+        plt.savefig("../{}/out/{}_PRC.png".format(path, name))
     except(ValueError):
         print('Not able to generate plots based on this test set!')
 
@@ -215,7 +215,7 @@ def CAM(net, w, pred, x, y, path, name, rd=0):
 
 
 def CAM_R(net, w, pred, x, path, name, rd=0):
-    DIRR = "../Neutrophil/{}/out/{}_img".format(path, name)
+    DIRR = "../{}/out/{}_img".format(path, name)
     rd = rd * 1000
 
     try:

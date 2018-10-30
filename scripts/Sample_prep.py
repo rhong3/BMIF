@@ -71,8 +71,8 @@ def samplesum():
     poslist = sorted(poslist)
     neglist = image_ids_in(neg_path)
     neglist = sorted(neglist)
-    postenum = int(len(poslist)*0.1)
-    negtenum = int(len(neglist)*0.1)
+    postenum = int(len(poslist)*0.2)
+    negtenum = int(len(neglist)*0.2)
     totpd = []
     pospd = []
     negpd = []
@@ -90,7 +90,7 @@ def samplesum():
         if len(postemplist) == 5:
             if len(telist) < postenum:
                 s = np.random.random_sample()
-                if s > 0.75:
+                if s > 0.7:
                     telist.extend(postemplist)
                 else:
                     trlist.extend(postemplist)
@@ -107,7 +107,7 @@ def samplesum():
         if len(negtemplist) == 5:
             if len(telist) < negtenum+postenum:
                 s = np.random.random_sample()
-                if s > 0.75:
+                if s > 0.7:
                     telist.extend(negtemplist)
                 else:
                     trlist.extend(negtemplist)

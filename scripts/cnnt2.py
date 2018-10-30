@@ -165,7 +165,7 @@ class INCEPTION():
                     coord.request_stop()
 
                     # Wait for threads to stop
-                    coord.join(threads)
+                    # coord.join(threads)
                     if Not_Realtest:
                         ac.metrics(pdx, yl, dirr, 'Test')
                     else:
@@ -191,7 +191,7 @@ class INCEPTION():
             coord.request_stop()
 
             # Wait for threads to stop
-            coord.join(threads)
+            # coord.join(threads)
             sess.close()
 
         feed_dict = {self.x_in: x, self.y_in: y,
@@ -292,7 +292,7 @@ class INCEPTION():
                         coord.request_stop()
 
                         # Wait for threads to stop
-                        coord.join(threads)
+                        # coord.join(threads)
                         sessa.close()
 
                         print("final avg cost (@ step {} = epoch {}): {}".format(
