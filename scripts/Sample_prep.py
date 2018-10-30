@@ -90,7 +90,7 @@ def samplesum():
         if len(postemplist) == 5:
             if len(telist) < postenum:
                 s = np.random.random_sample()
-                if s > 0.7:
+                if s > 0.6:
                     telist.extend(postemplist)
                 else:
                     trlist.extend(postemplist)
@@ -107,7 +107,7 @@ def samplesum():
         if len(negtemplist) == 5:
             if len(telist) < negtenum+postenum:
                 s = np.random.random_sample()
-                if s > 0.7:
+                if s > 0.6:
                     telist.extend(negtemplist)
                 else:
                     trlist.extend(negtemplist)
