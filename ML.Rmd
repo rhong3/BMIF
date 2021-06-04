@@ -1,0 +1,295 @@
+---
+title: "ML_trials"
+author: "Runyu Hong"
+date: "6/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# preprocessing
+```{r}
+library(fastDummies)
+
+# load and clean
+# create label column, remove columns with >30% NAs, remove columns with 1 level
+AD = read.csv("/da/GMA/ONCO/Melanoma/combi_AD.csv")
+AD$pyrexia_binary = abs(as.numeric(is.na(AD$time_to_pyrexia))-1)
+AD = AD[, colSums(is.na(AD)) <= nrow(AD)*0.3]
+AD = AD[, -(sapply(AD, is.factor) & sapply(AD, nlevels) <= 1)]
+Aplus= read.csv("/da/GMA/ONCO/Melanoma/combi_Aplus.csv")
+Aplus$pyrexia_binary = abs(as.numeric(is.na(Aplus$n_pyrexia_group))-1)
+Aplus = Aplus[, colSums(is.na(Aplus)) <= nrow(Aplus)*0.3]
+Aplus = Aplus[, -(sapply(Aplus, is.factor) & sapply(Aplus, nlevels) <= 1)]
+D = read.csv("/da/GMA/ONCO/Melanoma/combi_D.csv")
+D$pyrexia_binary = abs(as.numeric(is.na(D$time_to_pyrexia))-1)
+D = D[, colSums(is.na(D)) <= nrow(D)*0.3]
+D = D[, -(sapply(D, is.factor) & sapply(D, nlevels) <= 1)]
+V = read.csv("/da/GMA/ONCO/Melanoma/combi_V.csv")
+V$pyrexia_binary = abs(as.numeric(is.na(V$time_to_pyrexia))-1)
+V = V[, colSums(is.na(V)) <= nrow(V)*0.3]
+V = V[, -(sapply(V, is.factor) & sapply(V, nlevels) <= 1)]
+
+var_drop=c("USUBJID", "BIRTHDT", "AGEU", "AGEGRP1", "AGEGRP2", "SEX", "RANDDT", "TRTSDT", 
+           "TRTEDT", "DTHDT", "LCONTDT", "INVNAM", "IDIAGDTC", "IDIAGDT", 
+           "pyrexia_group", "time_to_pyrexia", "pyrexia_30days", 
+           "pyrexia_45days", "pyrexia_60days", "EOTDT", "EOTDT2", "EOTDT1", 
+           "LCONTDT", "NWTHYDT", "DTHDTC", "TR01EDT", "TRTEDT", "TR01SDT",
+           "TRTSDT", "RFPENDTC", "RFICDTC", "RFXENDTC", "RFXSTDTC", "RFENDTC",
+           "RFSTDTC", "IFCWDDT", "EOSDT", "DTHDT", "pyrexia_time_group")
+AD = AD[, !(colnames(AD) %in% var_drop)]
+Aplus = Aplus[, !(colnames(Aplus) %in% var_drop)]
+D = D[, !(colnames(D) %in% var_drop)]
+V = V[, !(colnames(V) %in% var_drop)]
+
+# Create dummy variables for factors
+AD.dummy <- dummy_cols(AD, select_columns = colnames(AD)[sapply(AD, is.factor)],
+           remove_selected_columns = TRUE)
+Aplus.dummy <- dummy_cols(Aplus, select_columns = colnames(Aplus)[sapply(Aplus, is.factor)],
+           remove_selected_columns = TRUE)
+D.dummy <- dummy_cols(D, select_columns = colnames(D)[sapply(D, is.factor)],
+           remove_selected_columns = TRUE)
+V.dummy <- dummy_cols(V, select_columns = colnames(V)[sapply(V, is.factor)],
+           remove_selected_columns = TRUE)
+names(AD.dummy) <- make.names(names(AD.dummy))
+names(Aplus.dummy) <- make.names(names(Aplus.dummy))
+names(D.dummy) <- make.names(names(D.dummy))
+names(V.dummy) <- make.names(names(V.dummy))
+
+# complete cases
+AD.complete = na.omit(AD.dummy)
+Aplus.complete = na.omit(Aplus.dummy)
+D.complete = na.omit(D.dummy)
+V.complete = na.omit(V.dummy)
+
+# with imputation
+for(i in 1:ncol(AD.dummy)){
+  AD.dummy[is.na(AD.dummy[,i]), i] <- mean(AD.dummy[,i], na.rm = TRUE)
+}
+for(i in 1:ncol(Aplus.dummy)){
+  Aplus.dummy[is.na(Aplus.dummy[,i]), i] <- mean(Aplus.dummy[,i], na.rm = TRUE)
+}
+for(i in 1:ncol(D.dummy)){
+  D.dummy[is.na(D.dummy[,i]), i] <- mean(D.dummy[,i], na.rm = TRUE)
+}
+for(i in 1:ncol(V.dummy)){
+  V.dummy[is.na(V.dummy[,i]), i] <- mean(V.dummy[,i], na.rm = TRUE)
+}
+```
+
+# Data split
+```{r}
+full_data = AD.complete
+train_sample = sample(1:nrow(full_data), size=nrow(full_data)*0.7)
+train = full_data[train_sample, ]
+test = full_data[-train_sample, ]
+```
+
+
+# LASSO 
+```{r}
+library(lars)
+library(glmnet)
+library(caret)
+cv.out =cv.glmnet(as.matrix(train[, !(colnames(train) %in% c("pyrexia_binary", "SUBJID", "SITEID"))]), as.matrix(train$pyrexia_binary),alpha =1,nfolds=10)
+plot(cv.out)
+```
+
+```{r}
+cv.out$lambda.min
+# Fitting
+model =glmnet(as.matrix(train[, !(colnames(train) %in% c("pyrexia_binary", "SUBJID", "SITEID"))]),as.matrix(train$pyrexia_binary),alpha=1,lambda=c(cv.out$lambda.min))
+# Predict results
+results_prob <- predict(model, as.matrix(test[, !(colnames(test) %in% c("pyrexia_binary", "SUBJID", "SITEID"))]),type='response')
+# Actual answers
+answers <- factor(test$pyrexia_binary, levels=c(0,1))
+results <- round(results_prob)
+results <- factor(results, levels=c(0,1))
+# Accuracy calculation
+misClasificError <- mean(answers != results)
+# Collecting results
+acc <- 1-misClasificError
+# Confusion matrix
+cm <- confusionMatrix(data=results, reference=answers, positive = "1")
+fpr <- cm$table[2]/nrow(test)
+fnr <- cm$table[3]/nrow(test)
+# Average accuracy of the model
+sprintf('accuracy: %f', acc)
+# Confusion matrix and plots of fpr and fnr
+sprintf('fpr: %f', fpr)
+sprintf('fnr: %f', fnr)
+sprintf('Last miss classification error: %f', misClasificError)
+```
+
+confusion matrix of LASSO prediction
+```{r}
+print(cm)
+```
+
+variable importance
+```{r}
+library(DT)
+important_features = 
+  data.frame(sig.feature=coef(model)@Dimnames[[1]][coef(model)@i+1], 
+             coeff=coef(model)@x)
+datatable(important_features[order(-abs(important_features$coeff)),], 
+          rownames = FALSE, class = 'cell-border stripe')
+```
+
+## CART
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(caret)
+binary.model <- rpart(pyrexia_binary ~ . , 
+                      data=train[, !(colnames(train) %in% c("SUBJID", "SITEID"))],cp=0.02, method='class')
+rpart.plot(binary.model, digit = 3, fallen.leaves = T, varlen=0, type = 3, extra = 106,
+main="pyrexia_binary")
+```
+
+```{r}
+# Predict results
+results_prob <- predict(binary.model, test[, !(colnames(test) %in% c("SUBJID", "SITEID"))], type='class')
+# Actual answers
+answers <- factor(test$pyrexia_binary, levels=c(0,1))
+results <- factor(results_prob, levels=c(0,1))
+# Accuracy calculation
+misClasificError <- mean(answers != results)
+# Collecting results
+acc <- 1-misClasificError
+# Confusion matrix
+cm <- confusionMatrix(data=results, reference=answers, positive = "1")
+fpr <- cm$table[2]/nrow(test)
+fnr <- cm$table[3]/nrow(test)
+# Average accuracy of the model
+sprintf('accuracy: %f', acc)
+# Confusion matrix and plots of fpr and fnr
+sprintf('fpr: %f', fpr)
+sprintf('fnr: %f', fnr)
+sprintf('Last miss classification error: %f', misClasificError)
+cm
+```
+
+```{r}
+mm = varImp(binary.model)
+mm$feature = rownames(mm)
+mm = mm[mm$Overall>0, ]
+mm = mm[order(-mm$Overall),]
+rownames(mm) = 1:nrow(mm)
+colnames(mm) = c("importance", "feature")
+datatable(mm, 
+          rownames = FALSE, class = 'cell-border stripe')
+```
+
+## Random Forests
+```{r}
+library(randomForest)
+library(rpart.plot)
+library(caret)
+rf.model <- randomForest(pyrexia_binary ~ ., data=train[, !(colnames(train) %in% c("SUBJID", "SITEID"))], mtry=4, importance=T)
+# Predict results
+results_prob <- predict(rf.model, newdata = test[, !(colnames(train) %in% c("SUBJID", "SITEID"))], type='class')
+# Actual answers
+answers <- factor(test$pyrexia_binary, levels=c(0,1))
+results <- round(results_prob)
+results <- factor(results, levels=c(0,1))
+# Accuracy calculation
+misClasificError <- mean(answers != results)
+# Collecting results
+acc <- 1-misClasificError
+# Confusion matrix
+cm <- confusionMatrix(data=results, reference=answers, positive = "1")
+fpr <- cm$table[2]/nrow(test)
+fnr <- cm$table[3]/nrow(test)
+# Average accuracy of the model
+sprintf('accuracy: %f', acc)
+# Confusion matrix and plots of fpr and fnr
+sprintf('fpr: %f', fpr)
+sprintf('fnr: %f', fnr)
+sprintf('Last miss classification error: %f', misClasificError)
+cm
+```
+
+```{r}
+mm = varImp(rf.model)
+mm$feature = rownames(mm)
+mm = mm[mm$Overall>0, ]
+mm = mm[order(-mm$Overall),]
+rownames(mm) = 1:nrow(mm)
+colnames(mm) = c("importance", "feature")
+datatable(mm, 
+          rownames = FALSE, class = 'cell-border stripe')
+```
+
+### gradient tree boosting
+```{r}
+library(gbm)
+library(rpart.plot)
+library(caret)
+gbm.model <- gbm(pyrexia_binary ~ ., data=train[, !(colnames(train) %in% c("SUBJID", "SITEID"))] ,distribution = "gaussian", interaction.depth =4,n.trees =30000,shrinkage = 0.1,n.cores=2)
+# Predict results
+results_prob <- predict(gbm.model, newdata = test[, !(colnames(test) %in% c("SUBJID", "SITEID"))], type="response",n.trees =30000)
+# Actual answers
+answers <- factor(test$pyrexia_binary, levels=c(0,1))
+results <- round(results_prob)
+results <- factor(results, levels=c(0,1))
+# Accuracy calculation
+misClasificError <- mean(answers != results)
+# Collecting results
+acc <- 1-misClasificError
+# Confusion matrix
+cm <- confusionMatrix(data=results, reference=answers, positive = "1")
+fpr <- cm$table[2]/nrow(test)
+fnr <- cm$table[3]/nrow(test)
+# Average accuracy of the model
+sprintf('accuracy: %f', acc)
+# Confusion matrix and plots of fpr and fnr
+sprintf('fpr: %f', fpr)
+sprintf('fnr: %f', fnr)
+sprintf('Last miss classification error: %f', misClasificError)
+cm
+```
+# variable importance
+```{r}
+mm = summary(gbm.model)
+mm = mm[mm$rel.inf>0, ]
+mm = mm[order(-mm$rel.inf),]
+rownames(mm) = 1:nrow(mm)
+colnames(mm) = c("feature", "relative influence")
+datatable(mm, 
+          rownames = FALSE, class = 'cell-border stripe')
+```
+
+### SVM
+```{r}
+library(e1071)
+library(rpart.plot)
+library(caret)
+svm.model <- svm(pyrexia_binary ~ ., data=train[, !(colnames(train) %in% c("SUBJID", "SITEID"))], type='C-classification', kernel='linear')
+# Predict results
+results_prob <- predict(svm.model, newdata = test[, !(colnames(test) %in% c("SUBJID", "SITEID"))], type="C-classification")
+# Actual answers
+answers <- factor(test$pyrexia_binary, levels=c(0,1))
+results <- factor(results_prob, levels=c(0,1))
+# Accuracy calculation
+misClasificError <- mean(answers != results)
+# Collecting results
+acc <- 1-misClasificError
+# Confusion matrix
+cm <- confusionMatrix(data=results, reference=answers, positive = "1")
+fpr <- cm$table[2]/nrow(test)
+fnr <- cm$table[3]/nrow(test)
+# Average accuracy of the model
+sprintf('accuracy: %f', acc)
+# Confusion matrix and plots of fpr and fnr
+sprintf('fpr: %f', fpr)
+sprintf('fnr: %f', fnr)
+sprintf('Last miss classification error: %f', misClasificError)
+```
+
+```{r}
+cm
+```
